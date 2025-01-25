@@ -3,86 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deposit</title>
+    <title>Deposit QRIS</title>
     <style>
-        /* Style popup */
-        #qrPopup {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            justify-content: center;
-            align-items: center;
-            color: white;
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
         }
-
         .hidden {
             display: none;
         }
-
-        #paymentInfo, #statusInfo {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #f4f4f4;
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 2px solid #ddd;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 999;
         }
-
-        #closePopup {
-            background-color: red;
+        .popup img {
+            max-width: 300px;
+        }
+        .popup button {
+            padding: 10px;
+            background-color: #f44336;
             color: white;
             border: none;
-            padding: 10px;
             cursor: pointer;
+            font-size: 16px;
+        }
+        .popup button:hover {
+            background-color: #e53935;
+        }
+        .status-info {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        #paymentInfo {
+            margin-top: 20px;
+        }
+        #paymentInfo p {
+            font-size: 18px;
         }
     </style>
 </head>
 <body>
-
-    <h1>Deposit</h1>
-
-    <!-- Form untuk input jumlah deposit -->
-    <label for="amount">Jumlah Deposit:</label>
+    <h1>Deposit QRIS</h1>
+    <label for="amount">Jumlah Deposit (Rp): </label>
     <input type="number" id="amount" min="1" placeholder="Masukkan jumlah deposit">
-    <button onclick="startDeposit()">Deposit</button>
+    <button id="depositBtn">Deposit</button>
 
-    <!-- Popup QRIS -->
-    <div id="qrPopup">
-        <div>
-            <h2>Deposit QRIS</h2>
-            <img id="qrisImage" src="" alt="QRIS" width="200">
-            <p id="paymentInfo" class="hidden">
-                <strong>Transaction ID:</strong> <span id="transactionId"></span><br>
-                <strong>Total:</strong> Rp<span id="totalAmount"></span><br>
-                <strong>Expired At:</strong> <span id="expirationTime"></span>
-            </p>
-            <button id="closePopup">Close</button>
-        </div>
+    <!-- Payment Info -->
+    <div id="paymentInfo" class="hidden">
+        <h3>Detail Deposit:</h3>
+        <p>Transaction ID: <span id="transactionId"></span></p>
+        <p>Total: Rp<span id="totalAmount"></span></p>
+        <p>Waktu Kedaluwarsa: <span id="expirationTime"></span></p>
     </div>
 
-    <!-- Status Info -->
-    <div id="statusInfo" class="hidden">
-        <h3>Deposit Selesai!</h3>
+    <!-- Popup QRIS -->
+    <div id="qrPopup" class="popup hidden">
+        <h3>Silakan bayar menggunakan QRIS</h3>
+        <img id="qrisImage" src="" alt="QRIS">
+        <button id="closePopup">Tutup</button>
+    </div>
+
+    <!-- Deposit Status -->
+    <div id="statusInfo" class="status-info hidden">
         <p id="depositStatus"></p>
     </div>
 
     <script>
         // Fungsi untuk memulai deposit
-        async function startDeposit() {
-            const amount = document.getElementById('amount').value;
-            if (!amount || isNaN(amount) || amount <= 0) {
-                alert('Masukkan jumlah deposit yang valid.');
-                return;
-            }
-
+        async function startDeposit(amount) {
             try {
                 const response = await fetch('/deposit', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ amount: amount })
+                    body: JSON.stringify({ amount })
                 });
                 const data = await response.json();
 
@@ -97,8 +100,8 @@
                     document.getElementById('qrisImage').src = data.paymentInfo.qrisUrl;
                     document.getElementById('qrPopup').style.display = 'flex';
 
-                    // Cek status transaksi setiap 5 detik
-                    checkTransactionStatus(data.paymentInfo.transactionId);
+                    // Mulai pengecekan status deposit setiap 5 detik
+                    checkDepositStatus(data.paymentInfo.transactionId);
                 } else {
                     alert('Gagal memproses deposit');
                 }
@@ -108,34 +111,38 @@
             }
         }
 
-        // Fungsi untuk cek status transaksi
-        async function checkTransactionStatus(transactionId) {
-            let isTransactionComplete = false;
-
+        // Fungsi untuk memeriksa status deposit
+        async function checkDepositStatus(transactionId) {
             const interval = setInterval(async () => {
-                if (isTransactionComplete) {
-                    clearInterval(interval);
-                    return;
-                }
-
                 try {
-                    const statusResponse = await fetch('/deposit/status');
-                    const status = await statusResponse.json();
+                    const response = await fetch('/deposit/status');
+                    const status = await response.json();
 
                     if (status.status === 'success') {
-                        isTransactionComplete = true;
+                        // Deposit selesai
+                        clearInterval(interval); // Berhenti mengecek
                         document.getElementById('qrPopup').style.display = 'none'; // Sembunyikan QRIS
                         document.getElementById('statusInfo').classList.remove('hidden');
                         document.getElementById('depositStatus').textContent = `Deposit berhasil! Saldo Anda telah ditambah Rp${status.amountReceived}.`;
                     }
                 } catch (error) {
-                    console.error('Error memeriksa status transaksi:', error);
+                    console.error('Error memeriksa status deposit:', error);
                 }
-            }, 5000); // Cek status setiap 5 detik
+            }, 5000); // Cek setiap 5 detik
         }
 
-        // Fungsi untuk menutup popup QRIS
-        document.getElementById('closePopup').addEventListener('click', function() {
+        // Event listener untuk tombol deposit
+        document.getElementById('depositBtn').addEventListener('click', () => {
+            const amount = parseInt(document.getElementById('amount').value);
+            if (isNaN(amount) || amount <= 0) {
+                alert('Jumlah deposit tidak valid.');
+            } else {
+                startDeposit(amount);
+            }
+        });
+
+        // Event listener untuk menutup popup QRIS
+        document.getElementById('closePopup').addEventListener('click', function () {
             document.getElementById('qrPopup').style.display = 'none';
         });
     </script>
