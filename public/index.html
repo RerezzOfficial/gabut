@@ -51,7 +51,7 @@
     </style>
 </head>
 <body>
-    <h1>DONASI QRIS</h1>
+    <h1>Deposit QRIS</h1>
     <label for="amount">Jumlah Deposit (Rp): </label>
     <input type="number" id="amount" min="1" placeholder="Masukkan jumlah deposit">
     <button id="depositBtn">Deposit</button>
@@ -101,7 +101,7 @@
                     document.getElementById('qrPopup').style.display = 'flex';
 
                     // Mulai pengecekan status deposit setiap 5 detik
-                    checkDepositStatus(data.paymentInfo.transactionId, data.paymentInfo.total);
+                    checkDepositStatus(data.paymentInfo.transactionId);
                 } else {
                     alert('Gagal memproses deposit');
                 }
@@ -112,23 +112,20 @@
         }
 
         // Fungsi untuk memeriksa status deposit
-        async function checkDepositStatus(transactionId, expectedAmount) {
+        async function checkDepositStatus(transactionId) {
             const interval = setInterval(async () => {
                 try {
                     const response = await fetch('/deposit/status');
                     const status = await response.json();
 
                     if (status.status === 'success') {
-                        // Deposit berhasil, menghentikan pengecekan status
-                        clearInterval(interval);
+                        // Deposit selesai
+                        clearInterval(interval); // Berhenti mengecek
                         document.getElementById('qrPopup').style.display = 'none'; // Sembunyikan QRIS
                         document.getElementById('statusInfo').classList.remove('hidden');
                         document.getElementById('depositStatus').textContent = `Deposit berhasil! Saldo Anda telah ditambah Rp${status.amountReceived}.`;
-
-                        // Menyembunyikan status deposit setelah 10 detik
-                        setTimeout(() => {
-                            document.getElementById('statusInfo').classList.add('hidden');
-                        }, 10000);
+                    } else if (status.status === 'pending') {
+                        console.log("Deposit masih dalam proses...");
                     }
                 } catch (error) {
                     console.error('Error memeriksa status deposit:', error);
