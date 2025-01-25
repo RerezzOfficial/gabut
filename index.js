@@ -1,18 +1,21 @@
 const express = require('express');
 const axios = require('axios');
+const path = require('path');
 const app = express();
 const port = 3000;
 
 // Data untuk key dan memberId
-const keyokt = 'your-api-key';
-const memberid = 'your-member-id';
+const keyokt = 'your-api-key'; // Gantilah dengan API Key yang sesuai
+const memberid = 'your-member-id'; // Gantilah dengan Member ID yang sesuai
 
 app.use(express.static('public'));
 app.use(express.json());
 
+// Endpoint untuk mengirimkan file index.html
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));  // Mengirimkan index.html
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));  // Mengirimkan index.html dari folder public
 });
+
 // Endpoint untuk melakukan deposit
 app.post('/deposit', async (req, res) => {
     const { amount } = req.body;
@@ -21,22 +24,23 @@ app.post('/deposit', async (req, res) => {
     }
 
     let requestAmount = parseInt(amount);
-    let feeServer = Math.floor(Math.random() * 11);
+    let feeServer = Math.floor(Math.random() * 11); // Fee acak untuk server
     let nominal = requestAmount + feeServer;
 
     try {
+        // Melakukan request ke API untuk mendapatkan informasi deposit dan QRIS
         const response = await axios.get(`https://www.api.im-rerezz.xyz/api/orkut/deposit?amount=${nominal}&codeqr=${keyokt}`);
         const pay = response.data.result;
         const expirationTime = new Date(pay.expirationTime);
-        const timeLeft = Math.max(0, Math.floor((expirationTime - new Date()) / 60000));
-        const formattedTime = new Date(expirationTime).toLocaleTimeString();
+        const timeLeft = Math.max(0, Math.floor((expirationTime - new Date()) / 60000)); // Menghitung waktu tersisa dalam menit
+        const formattedTime = new Date(expirationTime).toLocaleTimeString(); // Format waktu kedaluwarsa
 
         res.json({
             status: 'success',
             paymentInfo: {
                 transactionId: pay.transactionId,
-                qrisUrl: pay.qrImageUrl,
-                total: nominal,
+                qrisUrl: pay.qrImageUrl, // URL gambar QRIS
+                total: nominal, // Total deposit termasuk fee
                 expirationTime: formattedTime,
                 timeLeft: timeLeft
             }
@@ -55,6 +59,7 @@ app.get('/deposit/status', async (req, res) => {
     let nominal = requestAmount + feeServer;
 
     try {
+        // Melakukan request untuk cek status transaksi
         const statusResponse = await axios.get(`https://www.api.im-rerezz.xyz/api/orkut/cekstatus?merchant=${memberid}&keyorkut=${keyokt}`);
         const status = statusResponse.data;
 
@@ -65,7 +70,7 @@ app.get('/deposit/status', async (req, res) => {
             });
         } else {
             res.json({
-                status: 'pending'
+                status: 'pending'  // Menunggu status konfirmasi dari transaksi
             });
         }
     } catch (error) {
