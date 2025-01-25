@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deposit Online</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Deposit Online</h1>
+        <form id="depositForm">
+            <label for="amount">Jumlah Deposit</label>
+            <input type="number" id="amount" name="amount" required min="1" placeholder="Masukkan jumlah deposit" />
+            <button type="submit">Deposit</button>
+        </form>
+        <div id="paymentDetails" class="hidden">
+            <h2>Detail Pembayaran</h2>
+            <p id="transactionId"></p>
+            <img id="qrisImage" alt="QRIS" />
+            <p id="paymentInfo"></p>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('depositForm');
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const amount = document.getElementById('amount').value;
+            const response = await fetch('/deposit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount })
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                document.getElementById('transactionId').textContent = `Referensi: #${data.paymentInfo.transactionId}`;
+                document.getElementById('qrisImage').src = data.paymentInfo.qrisUrl;
+                document.getElementById('paymentInfo').textContent = `Jumlah Deposit: Rp${data.paymentInfo.amount}\nFee Server: Rp${data.paymentInfo.fee}\nTotal Pembayaran: Rp${data.paymentInfo.total}\nBerlaku hingga: ${data.paymentInfo.expirationTime}`;
+
+                document.getElementById('paymentDetails').classList.remove('hidden');
+            } else {
+                alert('Terjadi kesalahan: ' + data.message);
+            }
+        });
+    </script>
+</body>
+</html>
