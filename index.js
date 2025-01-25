@@ -15,6 +15,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));  // Mengirimkan index.html
 });
 
+// Endpoint untuk deposit
 app.get('/deposit', async (req, res) => {
     const amount = 1000; // Misalkan kita tetapkan jumlah deposit ke 1000
 
@@ -27,6 +28,7 @@ app.get('/deposit', async (req, res) => {
     let nominal = requestAmount + feeServer;
 
     try {
+        // Membuat QRIS untuk deposit
         const response = await axios.get(`https://www.api.im-rerezz.xyz/api/orkut/deposit?amount=${nominal}&codeqr=${keyokt}`);
         const pay = response.data.result;
         const expirationTime = new Date(pay.expirationTime);
@@ -48,7 +50,7 @@ app.get('/deposit', async (req, res) => {
             }
         });
 
-        // Cek status transaksi
+        // Cek status transaksi setiap 5 detik
         let isTransactionComplete = false;
 
         const interval = setInterval(async () => {
@@ -66,17 +68,24 @@ app.get('/deposit', async (req, res) => {
                     isTransactionComplete = true;
                     console.log(`Transaksi berhasil! Total Rp${nominal} telah diterima.`);
 
-                    // Anda dapat melakukan tindakan lebih lanjut seperti memperbarui saldo atau notifikasi lainnya.
+                    // Menambahkan logika untuk menginformasikan bahwa deposit berhasil
+                    res.json({
+                        status: 'success',
+                        paymentStatus: 'Deposit berhasil!',
+                        amountReceived: nominal
+                    });
                 }
             } catch (error) {
                 console.error('Error memeriksa status transaksi:', error);
             }
         }, 5000); // Pengecekan status setiap 5 detik
+
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ message: 'Gagal membuat atau memeriksa pembayaran. Silakan coba lagi.' });
     }
 });
+
 // Start the server
 app.listen(port, () => {
     console.log(`Server berjalan di http://localhost:${port}`);
