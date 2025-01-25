@@ -11,6 +11,10 @@ const memberid = 'OK2160280';
 app.use(express.static('public'));
 app.use(express.json());
 
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));  // Mengirimkan index.html
+});
+
 // Endpoint untuk deposit
 app.post('/deposit', async (req, res) => {
     const { amount } = req.body;
