@@ -15,11 +15,11 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));  // Mengirimkan index.html
 });
 
-// Endpoint untuk deposit
-app.post('/deposit', async (req, res) => {
-    const { amount } = req.body;
+app.get('/deposit', async (req, res) => {
+    const amount = 1000; // Misalkan kita tetapkan jumlah deposit ke 1000
+
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
-        return res.status(400).json({ message: 'Masukkan jumlah deposit yang valid.' });
+        return res.status(400).json({ message: 'Jumlah deposit tidak valid.' });
     }
 
     let requestAmount = parseInt(amount);
@@ -34,6 +34,7 @@ app.post('/deposit', async (req, res) => {
 
         const formattedTime = new Date(expirationTime).toLocaleTimeString();
 
+        // Kirimkan informasi pembayaran
         res.json({
             status: 'success',
             paymentInfo: {
@@ -46,12 +47,36 @@ app.post('/deposit', async (req, res) => {
                 timeLeft: timeLeft
             }
         });
+
+        // Cek status transaksi
+        let isTransactionComplete = false;
+
+        const interval = setInterval(async () => {
+            if (isTransactionComplete) {
+                clearInterval(interval);
+                return;
+            }
+
+            try {
+                const statusResponse = await axios.get(`https://www.api.im-rerezz.xyz/api/orkut/cekstatus?merchant=${memberid}&keyorkut=${keyokt}`);
+                const status = statusResponse.data;
+
+                // Jika transaksi sudah selesai
+                if (status && parseInt(status.amount) === parseInt(nominal)) {
+                    isTransactionComplete = true;
+                    console.log(`Transaksi berhasil! Total Rp${nominal} telah diterima.`);
+
+                    // Anda dapat melakukan tindakan lebih lanjut seperti memperbarui saldo atau notifikasi lainnya.
+                }
+            } catch (error) {
+                console.error('Error memeriksa status transaksi:', error);
+            }
+        }, 5000); // Pengecekan status setiap 5 detik
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ message: 'Gagal membuat atau memeriksa pembayaran. Silakan coba lagi.' });
     }
 });
-
 // Start the server
 app.listen(port, () => {
     console.log(`Server berjalan di http://localhost:${port}`);
