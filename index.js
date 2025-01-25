@@ -5,8 +5,8 @@ const app = express();
 const port = 3000;
 
 // Data untuk key dan memberId
-const keyokt = 'your-api-key';
-const memberid = 'your-member-id';
+const keyokt = '00020101021126670016COM.NOBUBANK.WWW01189360050300000879140214509288104204890303UMI51440014ID.CO.QRIS.WWW0215ID20253689552610303UMI5204541153033605802ID5925REREZZ OFFICIAL OK21602806008SUKABUMI61054311162070703A016304595A';
+const memberid = 'OK2160280';
 
 app.use(express.static('public'));
 app.use(express.json());
