@@ -9,7 +9,8 @@
   },
   "dependencies": {
     "axios": "^0.27.2",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "path": "latest"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
