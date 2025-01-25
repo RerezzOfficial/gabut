@@ -1,0 +1,22 @@
+{
+  "name": "deposit-website",
+  "version": "1.0.0",
+  "description": "Website untuk deposit otomatis menggunakan QRIS",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "axios": "^0.27.2",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  },
+  "engines": {
+    "node": "16.x"
+  },
+  "author": "",
+  "license": "MIT"
+}
