@@ -10,6 +10,9 @@ const memberid = 'your-member-id';
 app.use(express.static('public'));
 app.use(express.json());
 
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));  // Mengirimkan index.html
+});
 // Endpoint untuk melakukan deposit
 app.post('/deposit', async (req, res) => {
     const { amount } = req.body;
