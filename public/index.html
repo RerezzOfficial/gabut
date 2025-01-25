@@ -119,50 +119,59 @@
     </div>
 
     <script>
-        // Fungsi untuk memuat data deposit secara otomatis saat halaman dimuat
-        async function loadDeposit() {
-            try {
-                const response = await fetch('/deposit');
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    // Menampilkan informasi pembayaran
-                    document.getElementById('paymentInfo').classList.remove('hidden');
-                    document.getElementById('transactionId').textContent = data.paymentInfo.transactionId;
-                    document.getElementById('totalAmount').textContent = data.paymentInfo.total;
-                    document.getElementById('expirationTime').textContent = data.paymentInfo.expirationTime;
+// Fungsi untuk memuat data deposit secara otomatis saat halaman dimuat
+async function loadDeposit() {
+    try {
+        const response = await fetch('/deposit');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            // Menampilkan informasi pembayaran
+            document.getElementById('paymentInfo').classList.remove('hidden');
+            document.getElementById('transactionId').textContent = data.paymentInfo.transactionId;
+            document.getElementById('totalAmount').textContent = data.paymentInfo.total;
+            document.getElementById('expirationTime').textContent = data.paymentInfo.expirationTime;
 
-                    // Menampilkan popup QRIS
-                    document.getElementById('qrisImage').src = data.paymentInfo.qrisUrl;
-                    document.getElementById('qrPopup').style.display = 'flex';
+            // Menampilkan popup QRIS
+            document.getElementById('qrisImage').src = data.paymentInfo.qrisUrl;
+            document.getElementById('qrPopup').style.display = 'flex';
 
-                    // Menutup popup setelah pembayaran selesai
-                    setTimeout(async () => {
-                        const statusResponse = await fetch('/cekstatus');  // Gantilah dengan endpoint yang sesuai untuk cek status
-                        const status = await statusResponse.json();
-
-                        if (status && status.status === 'success') {
-                            document.getElementById('qrPopup').style.display = 'none'; // Sembunyikan QRIS
-                            document.getElementById('statusInfo').classList.remove('hidden');
-                            document.getElementById('depositStatus').textContent = `Deposit berhasil! Saldo Anda telah ditambah Rp${status.amount}.`;
-                        }
-                    }, 5000); // Cek status setelah 5 detik
-                } else {
-                    alert('Gagal memproses deposit');
+            // Cek status setelah 5 detik
+            let isTransactionComplete = false;
+            const interval = setInterval(async () => {
+                if (isTransactionComplete) {
+                    clearInterval(interval);
+                    return;
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Gagal melakukan request deposit.');
-            }
+
+                const statusResponse = await fetch('/deposit/status');  // Endpoint pengecekan status
+                const status = await statusResponse.json();
+
+                if (status && status.status === 'success') {
+                    isTransactionComplete = true;
+                    document.getElementById('qrPopup').style.display = 'none'; // Sembunyikan QRIS
+                    document.getElementById('statusInfo').classList.remove('hidden');
+                    document.getElementById('depositStatus').textContent = `Deposit berhasil! Saldo Anda telah ditambah Rp${status.amountReceived}.`;
+                }
+            }, 5000); // Cek status setiap 5 detik
+
+        } else {
+            alert('Gagal memproses deposit');
         }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Gagal melakukan request deposit.');
+    }
+}
 
-        // Fungsi untuk menutup popup QRIS
-        document.getElementById('closePopup').addEventListener('click', function() {
-            document.getElementById('qrPopup').style.display = 'none';
-        });
+// Fungsi untuk menutup popup QRIS
+document.getElementById('closePopup').addEventListener('click', function() {
+    document.getElementById('qrPopup').style.display = 'none';
+});
 
-        // Panggil fungsi loadDeposit saat halaman dimuat
-        window.onload = loadDeposit;
+// Panggil fungsi loadDeposit saat halaman dimuat
+window.onload = loadDeposit;
+
     </script>
 </body>
 </html>
